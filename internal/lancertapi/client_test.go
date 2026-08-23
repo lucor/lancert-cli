@@ -23,6 +23,9 @@ func TestRegisterAndUpdate(t *testing.T) {
 	const password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN"
 	const username = "12345678-1234-4234-9234-123456789abc"
 	httpClient := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		if r.Header.Get("User-Agent") != "lancert-cli/test" {
+			t.Fatalf("User-Agent = %q", r.Header.Get("User-Agent"))
+		}
 		switch r.URL.Path {
 		case "/register/192.168.1.50":
 			return response(http.StatusCreated, `{"hostname":"quiet-otter.lancert.dev","username":"12345678-1234-4234-9234-123456789abc","password":"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN","subdomain":"quiet-otter","fulldomain":"_acme-challenge.quiet-otter.lancert.dev"}`), nil
@@ -36,7 +39,7 @@ func TestRegisterAndUpdate(t *testing.T) {
 		}
 	})}
 
-	client, err := New("https://api.test", httpClient)
+	client, err := New("https://api.test", httpClient, "lancert-cli/test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +58,7 @@ func TestRegisterRejectsUnknownFields(t *testing.T) {
 	httpClient := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 		return response(http.StatusCreated, `{"hostname":"quiet-otter.lancert.dev","username":"12345678-1234-4234-9234-123456789abc","password":"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN","subdomain":"quiet-otter","fulldomain":"_acme-challenge.quiet-otter.lancert.dev","extra":true}`), nil
 	})}
-	client, _ := New("https://api.test", httpClient)
+	client, _ := New("https://api.test", httpClient, "lancert-cli/test")
 	if _, err := client.Register(context.Background(), "192.168.1.50"); err == nil {
 		t.Fatal("expected strict decoding error")
 	}

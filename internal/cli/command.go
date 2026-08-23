@@ -138,7 +138,7 @@ func newRunnerConfig(cmd *urfavecli.Command, stdout io.Writer, acceptTerms bool)
 		APIURL: cmd.String("api-url"), ACMEDirectory: cmd.String("acme-directory"), Email: cmd.String("email"),
 		ConfigDir: configDir, AcceptTerms: acceptTerms,
 		HTTPClient: &http.Client{Timeout: defaultHTTPTimeout}, ACMEHTTPClient: acmeHTTPClient,
-		Resolver: resolver, Output: stdout,
+		Resolver: resolver, Output: stdout, UserAgent: "lancert-cli/" + Version,
 	})
 }
 

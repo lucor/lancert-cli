@@ -34,12 +34,13 @@ type Registration struct {
 
 // Client talks to one Lancert service instance.
 type Client struct {
-	base *url.URL
-	http *http.Client
+	base      *url.URL
+	http      *http.Client
+	userAgent string
 }
 
 // New creates a client for baseURL.
-func New(baseURL string, httpClient *http.Client) (*Client, error) {
+func New(baseURL string, httpClient *http.Client, userAgent string) (*Client, error) {
 	base, err := url.Parse(baseURL)
 	if err != nil || base.Scheme == "" || base.Host == "" || base.User != nil || base.RawQuery != "" || base.Fragment != "" {
 		return nil, fmt.Errorf("invalid Lancert API URL %q", baseURL)
@@ -47,8 +48,11 @@ func New(baseURL string, httpClient *http.Client) (*Client, error) {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
+	if userAgent == "" {
+		return nil, errors.New("Lancert API user agent is required")
+	}
 	base.Path = strings.TrimSuffix(base.Path, "/")
-	return &Client{base: base, http: httpClient}, nil
+	return &Client{base: base, http: httpClient, userAgent: userAgent}, nil
 }
 
 // Register creates credentials for targetIP. The server returns the password only once.
@@ -59,6 +63,7 @@ func (c *Client) Register(ctx context.Context, targetIP string) (Registration, e
 	if err != nil {
 		return Registration{}, fmt.Errorf("create registration request: %w", err)
 	}
+	req.Header.Set("User-Agent", c.userAgent)
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return Registration{}, fmt.Errorf("register target: %w", err)
@@ -98,6 +103,7 @@ func (c *Client) Update(ctx context.Context, registration Registration, txt stri
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Api-User", registration.Username)
 	req.Header.Set("X-Api-Key", registration.Password)
+	req.Header.Set("User-Agent", c.userAgent)
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("publish DNS challenge: %w", err)

@@ -32,6 +32,7 @@ const (
 	minimumARICheckInterval = time.Hour
 	minimumARIRetryLead     = time.Minute
 	ariFallbackRenewalLead  = 30 * 24 * time.Hour
+	defaultUserAgent        = "lancert-cli/dev"
 )
 
 // ErrTermsRequired means a new ACME account needs explicit terms acceptance.
@@ -46,6 +47,7 @@ type Config struct {
 	AcceptTerms    bool
 	HTTPClient     *http.Client
 	ACMEHTTPClient *http.Client
+	UserAgent      string
 	Resolver       *net.Resolver
 	Now            func() time.Time
 	Output         io.Writer
@@ -78,11 +80,14 @@ func New(config Config) (*Runner, error) {
 	if config.Output == nil {
 		config.Output = io.Discard
 	}
+	if config.UserAgent == "" {
+		config.UserAgent = defaultUserAgent
+	}
 	store, err := state.Open(config.ConfigDir)
 	if err != nil {
 		return nil, err
 	}
-	apiClient, err := lancertapi.New(config.APIURL, config.HTTPClient)
+	apiClient, err := lancertapi.New(config.APIURL, config.HTTPClient, config.UserAgent)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +222,7 @@ func (r *Runner) issueAndSave(ctx context.Context, registration state.Registrati
 	}
 	apiClient := r.api
 	if registration.APIURL != r.config.APIURL {
-		apiClient, err = lancertapi.New(registration.APIURL, r.config.HTTPClient)
+		apiClient, err = lancertapi.New(registration.APIURL, r.config.HTTPClient, r.config.UserAgent)
 		if err != nil {
 			return err
 		}
