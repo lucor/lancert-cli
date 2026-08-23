@@ -38,3 +38,21 @@ checksum:
 
 changelog:
   use: git
+
+homebrew_casks:
+  - name: lancert
+    binaries:
+      - lancert
+    homepage: https://lancert.dev/
+    description: Local HTTPS certificates for private IP addresses
+    repository:
+      owner: lucor
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/lancert"]
+          end

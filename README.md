@@ -10,7 +10,13 @@ short-lived DNS challenge records needed by the certificate authority.
 
 ## Install
 
-Until binary releases are available, install from source with Go:
+With Homebrew:
+
+```console
+brew install lucor/tap/lancert
+```
+
+Or install from source with Go:
 
 ```console
 go install go.lucor.dev/lancert-cli/cmd/lancert@latest
