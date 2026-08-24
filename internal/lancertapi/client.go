@@ -49,7 +49,7 @@ func New(baseURL string, httpClient *http.Client, userAgent string) (*Client, er
 		httpClient = http.DefaultClient
 	}
 	if userAgent == "" {
-		return nil, errors.New("Lancert API user agent is required")
+		return nil, errors.New("lancert API user agent is required")
 	}
 	base.Path = strings.TrimSuffix(base.Path, "/")
 	return &Client{base: base, http: httpClient, userAgent: userAgent}, nil
