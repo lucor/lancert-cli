@@ -65,6 +65,9 @@ func newCommand(configDir string, stdin io.Reader, stdout, stderr io.Writer) *ur
 			{Name: "renew", Usage: "renew locally managed certificates", Action: func(ctx context.Context, cmd *urfavecli.Command) error {
 				return executeRenew(ctx, cmd, stdout)
 			}},
+			{Name: "list", Usage: "list locally managed certificates", Action: func(ctx context.Context, cmd *urfavecli.Command) error {
+				return executeList(ctx, cmd, stdout)
+			}},
 		},
 		Action: func(ctx context.Context, cmd *urfavecli.Command) error {
 			if cmd.NArg() != 1 {
@@ -108,6 +111,14 @@ func executeRenew(ctx context.Context, cmd *urfavecli.Command, stdout io.Writer)
 		return err
 	}
 	return runner.Renew(commandCtx)
+}
+
+func executeList(ctx context.Context, cmd *urfavecli.Command, stdout io.Writer) error {
+	runner, err := newRunner(cmd, stdout)
+	if err != nil {
+		return err
+	}
+	return runner.List(ctx)
 }
 
 func newRunner(cmd *urfavecli.Command, stdout io.Writer) (*app.Runner, error) {

@@ -105,6 +105,27 @@ func TestChooseRenewAtIsStableAndInsideWindow(t *testing.T) {
 	}
 }
 
+func TestFormatExpiry(t *testing.T) {
+	now := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
+	tests := []struct {
+		notAfter time.Time
+		want     string
+	}{
+		{now.Add(61 * 24 * time.Hour), "in 61 days"},
+		{now.Add(24 * time.Hour), "in 1 day"},
+		{now.Add(2 * time.Hour), "in less than a day"},
+		{now.Add(-2 * time.Hour), "expired today"},
+		{now.Add(-24 * time.Hour), "expired 1 day ago"},
+		{now.Add(-5 * 24 * time.Hour), "expired 5 days ago"},
+	}
+	for _, tt := range tests {
+		got := formatExpiry(tt.notAfter, now)
+		if got != tt.want {
+			t.Errorf("formatExpiry(%v) = %q, want %q", tt.notAfter, got, tt.want)
+		}
+	}
+}
+
 func testRegistration(now time.Time) state.Registration {
 	return state.Registration{
 		TargetIP: "192.168.1.50", APIURL: "https://api.test", ACMEDirectory: "https://acme.test/directory", CreatedAt: now,

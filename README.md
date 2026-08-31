@@ -60,6 +60,25 @@ command chooses a stable time inside its suggested renewal window. If ARI is
 unavailable, it renews certificates within 30 days of expiry. It is safe to
 invoke regularly from cron, systemd, or launchd.
 
+## List managed certificates
+
+```console
+lancert list
+```
+
+Prints a table of every locally registered target with its hostname, private
+IP address, certificate expiration, and certificate path:
+
+```text
+HOSTNAME                 IP            EXPIRES     CERTIFICATE
+blue-fox.lancert.dev     10.0.0.12     in 18 days  /home/alice/.config/lancert/certs/blue-fox.lancert.dev/fullchain.pem
+quiet-otter.lancert.dev  192.168.1.50  in 61 days  /home/alice/.config/lancert/certs/quiet-otter.lancert.dev/fullchain.pem
+```
+
+Registrations are sorted by hostname. The command handles missing, expired,
+and unreadable certificates gracefully, using `not found` or `unreadable`
+in place of the certificate path when appropriate.
+
 ## Where Lancert stores data
 
 Lancert stores its data in your standard configuration directory:

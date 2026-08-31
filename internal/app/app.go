@@ -13,7 +13,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"go.lucor.dev/lancert-cli/internal/acme"
@@ -142,6 +144,64 @@ func (r *Runner) Renew(ctx context.Context) error {
 		return fmt.Errorf("renewal failed for %d target(s): %s", len(failures), strings.Join(failures, "; "))
 	}
 	return nil
+}
+
+// List prints every managed registration with certificate status, sorted by hostname.
+func (r *Runner) List(context.Context) error {
+	registrations, err := r.store.Registrations()
+	if err != nil {
+		return err
+	}
+	if len(registrations) == 0 {
+		fmt.Fprintln(r.config.Output, "No managed certificates.")
+		return nil
+	}
+	sort.Slice(registrations, func(i, j int) bool {
+		return registrations[i].Credentials.Hostname < registrations[j].Credentials.Hostname
+	})
+
+	table := tabwriter.NewWriter(r.config.Output, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(table, "HOSTNAME\tIP\tEXPIRES\tCERTIFICATE")
+	now := r.config.Now()
+	for _, registration := range registrations {
+		hostname := registration.Credentials.Hostname
+		certPath, _ := r.store.CertificatePaths(hostname)
+		leaf, found, err := certificate.LoadLeaf(certPath)
+		expires := "—"
+		switch {
+		case err != nil:
+			certPath = "unreadable"
+		case !found:
+			certPath = "not found"
+		default:
+			expires = formatExpiry(leaf.NotAfter, now)
+		}
+		fmt.Fprintf(table, "%s\t%s\t%s\t%s\n", hostname, registration.TargetIP, expires, certPath)
+	}
+	return table.Flush()
+}
+
+func formatExpiry(notAfter, now time.Time) string {
+	if now.Before(notAfter) {
+		remaining := notAfter.Sub(now)
+		days := int(remaining.Hours() / 24)
+		if days > 0 {
+			if days == 1 {
+				return "in 1 day"
+			}
+			return fmt.Sprintf("in %d days", days)
+		}
+		return "in less than a day"
+	}
+	elapsed := now.Sub(notAfter)
+	days := int(elapsed.Hours() / 24)
+	if days > 0 {
+		if days == 1 {
+			return "expired 1 day ago"
+		}
+		return fmt.Sprintf("expired %d days ago", days)
+	}
+	return "expired today"
 }
 
 func (r *Runner) ensureRegistration(ctx context.Context, registration state.Registration) error {
