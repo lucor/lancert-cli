@@ -1,9 +1,8 @@
 module go.lucor.dev/lancert-cli
 
-go 1.26.0
+go 1.27.0
 
 require (
-	github.com/google/uuid v1.6.0
 	github.com/mholt/acmez/v3 v3.1.6
 	github.com/urfave/cli/v3 v3.10.1
 )

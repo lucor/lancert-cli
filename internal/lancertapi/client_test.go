@@ -76,11 +76,14 @@ func TestCredentialFieldValidationUsesProtocolParsers(t *testing.T) {
 			t.Errorf("base64URL(%q) = true", value)
 		}
 	}
-	if !validUUIDv4("12345678-1234-4234-9234-123456789abc") {
-		t.Fatal("valid UUIDv4 rejected")
+	if !validUUID("12345678-1234-4234-9234-123456789abc") {
+		t.Fatal("valid UUID rejected")
 	}
-	if validUUIDv4("12345678-1234-1234-9234-123456789abc") {
-		t.Fatal("UUIDv1 accepted as UUIDv4")
+	if !validUUID("12345678-1234-1234-9234-123456789abc") {
+		t.Fatal("valid UUID rejected")
+	}
+	if validUUID("not a UUID") {
+		t.Fatal("invalid UUID accepted")
 	}
 }
 

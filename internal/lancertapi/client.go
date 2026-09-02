@@ -12,8 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 const (
@@ -146,7 +145,7 @@ func (r Registration) Validate() error {
 	if !validHostname(r.Hostname) || !strings.HasPrefix(r.Hostname, r.Subdomain+".") || r.FullDomain != "_acme-challenge."+r.Hostname {
 		return errors.New("inconsistent hostname fields")
 	}
-	if !validUUIDv4(r.Username) {
+	if !validUUID(r.Username) {
 		return errors.New("invalid API username")
 	}
 	if !base64URL(r.Password) {
@@ -184,9 +183,9 @@ func validLabel(value string) bool {
 	return true
 }
 
-func validUUIDv4(value string) bool {
-	parsed, err := uuid.Parse(value)
-	return err == nil && parsed.String() == value && parsed.Version() == uuid.Version(4) && parsed.Variant() == uuid.RFC4122
+func validUUID(value string) bool {
+	_, err := uuid.Parse(value)
+	return err == nil
 }
 
 func base64URL(value string) bool {
