@@ -1,6 +1,11 @@
 package target
 
-import "testing"
+import (
+	"net"
+	"net/netip"
+	"reflect"
+	"testing"
+)
 
 func TestParse(t *testing.T) {
 	t.Parallel()
@@ -14,4 +19,29 @@ func TestParse(t *testing.T) {
 			t.Errorf("Parse(%q) unexpectedly succeeded", value)
 		}
 	}
+}
+
+func TestDiscover(t *testing.T) {
+	t.Parallel()
+	candidates := discover([]interfaceInfo{
+		{name: "down0", addresses: []net.Addr{ipNet("192.168.1.10/24")}},
+		{name: "en0", up: true, addresses: []net.Addr{ipNet("fe80::1/64"), ipNet("192.168.1.50/24"), ipNet("8.8.8.8/24")}},
+		{name: "vpn0", up: true, addresses: []net.Addr{ipNet("10.8.0.12/24"), ipNet("192.168.1.50/24")}},
+	})
+	want := []Candidate{
+		{Address: netip.MustParseAddr("10.8.0.12"), Interface: "vpn0"},
+		{Address: netip.MustParseAddr("192.168.1.50"), Interface: "en0"},
+	}
+	if !reflect.DeepEqual(candidates, want) {
+		t.Fatalf("discover() = %#v, want %#v", candidates, want)
+	}
+}
+
+func ipNet(value string) *net.IPNet {
+	ip, network, err := net.ParseCIDR(value)
+	if err != nil {
+		panic(err)
+	}
+	network.IP = ip
+	return network
 }

@@ -18,6 +18,7 @@ import (
 	"go.lucor.dev/lancert-cli/internal/acme"
 	"go.lucor.dev/lancert-cli/internal/app"
 	"go.lucor.dev/lancert-cli/internal/state"
+	"go.lucor.dev/lancert-cli/internal/target"
 )
 
 // Version is set at build time via -ldflags. It falls back to "dev" locally.
@@ -70,12 +71,49 @@ func newCommand(configDir string, stdin io.Reader, stdout, stderr io.Writer) *ur
 			}},
 		},
 		Action: func(ctx context.Context, cmd *urfavecli.Command) error {
-			if cmd.NArg() != 1 {
+			if cmd.NArg() == 0 {
+				return suggestTarget(stdout)
+			}
+			if cmd.NArg() > 1 {
 				return urfavecli.Exit("expected one private IPv4 address", 2)
 			}
 			return executeEnsure(ctx, cmd, cmd.Args().First(), stdin, stdout)
 		},
 	}
+}
+
+func suggestTarget(output io.Writer) error {
+	candidates, err := target.Discover()
+	if err != nil {
+		return fmt.Errorf("detect private IPv4 addresses: %w", err)
+	}
+	printTargetSuggestions(output, candidates)
+	return nil
+}
+
+func printTargetSuggestions(output io.Writer, candidates []target.Candidate) {
+	if len(candidates) == 0 {
+		fmt.Fprintln(output, "No private IPv4 addresses were detected.")
+		fmt.Fprintln(output, "Provide the address where your application is reachable:")
+		fmt.Fprintln(output, "  lancert <address>")
+		return
+	}
+	label := "address"
+	if len(candidates) > 1 {
+		label = "addresses"
+	}
+	fmt.Fprintf(output, "Detected private IPv4 %s:\n\n", label)
+	for _, candidate := range candidates {
+		fmt.Fprintf(output, "  %-15s (%s)\n", candidate.Address, candidate.Interface)
+	}
+	fmt.Fprintln(output)
+	if len(candidates) == 1 {
+		fmt.Fprintln(output, "Run:")
+		fmt.Fprintf(output, "  lancert %s\n", candidates[0].Address)
+		return
+	}
+	fmt.Fprintln(output, "Choose the address where your application is reachable, then run:")
+	fmt.Fprintln(output, "  lancert <address>")
 }
 
 func executeEnsure(ctx context.Context, cmd *urfavecli.Command, targetIP string, stdin io.Reader, stdout io.Writer) error {

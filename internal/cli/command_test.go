@@ -10,6 +10,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +20,41 @@ import (
 	"go.lucor.dev/lancert-cli/internal/app"
 	"go.lucor.dev/lancert-cli/internal/lancertapi"
 	"go.lucor.dev/lancert-cli/internal/state"
+	"go.lucor.dev/lancert-cli/internal/target"
 )
+
+func TestNoArgumentSuggestsSingleDetectedAddress(t *testing.T) {
+	t.Parallel()
+	var output bytes.Buffer
+	printTargetSuggestions(&output, []target.Candidate{{Address: netip.MustParseAddr("192.168.1.50"), Interface: "en0"}})
+	want := "Detected private IPv4 address:\n\n  192.168.1.50    (en0)\n\nRun:\n  lancert 192.168.1.50\n"
+	if output.String() != want {
+		t.Fatalf("output = %q, want %q", output.String(), want)
+	}
+}
+
+func TestNoArgumentSuggestsMultipleDetectedAddresses(t *testing.T) {
+	t.Parallel()
+	var output bytes.Buffer
+	printTargetSuggestions(&output, []target.Candidate{
+		{Address: netip.MustParseAddr("10.8.0.12"), Interface: "utun3"},
+		{Address: netip.MustParseAddr("192.168.1.50"), Interface: "en0"},
+	})
+	want := "Detected private IPv4 addresses:\n\n  10.8.0.12       (utun3)\n  192.168.1.50    (en0)\n\nChoose the address where your application is reachable, then run:\n  lancert <address>\n"
+	if output.String() != want {
+		t.Fatalf("output = %q, want %q", output.String(), want)
+	}
+}
+
+func TestNoArgumentWithoutDetectedAddress(t *testing.T) {
+	t.Parallel()
+	var output bytes.Buffer
+	printTargetSuggestions(&output, nil)
+	want := "No private IPv4 addresses were detected.\nProvide the address where your application is reachable:\n  lancert <address>\n"
+	if output.String() != want {
+		t.Fatalf("output = %q, want %q", output.String(), want)
+	}
+}
 
 func TestVersionCommandDoesNotInitializeState(t *testing.T) {
 	var output bytes.Buffer

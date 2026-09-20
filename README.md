@@ -49,6 +49,11 @@ authority.
 The CLI accepts only private IPv4 addresses in `10.0.0.0/8`, `172.16.0.0/12`,
 and `192.168.0.0/16`.
 
+If you are unsure which address to use, run `lancert` without an argument. It
+lists the private IPv4 addresses on active local network interfaces and shows
+the command to run. Lancert does not select an address or request a certificate
+until you provide one explicitly.
+
 ## Renew certificates
 
 ```console
