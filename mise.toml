@@ -1,6 +1,6 @@
 [tools]
 go = "1.27"
-goreleaser = "latest"
+goreleaser = "2.18.2"
 
 [tasks.setup]
 description = "Download Go module dependencies"
